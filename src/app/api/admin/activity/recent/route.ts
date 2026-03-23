@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/auth-helpers'
 import { prisma } from '@/lib/prisma'
 
+// Force dynamic rendering - do not statically generate this route
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 /**
  * GET /api/admin/activity/recent
  * Get recent activity logs (last 20)
