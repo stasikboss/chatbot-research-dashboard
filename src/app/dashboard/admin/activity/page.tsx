@@ -31,6 +31,13 @@ const activityTypeLabels: Record<ActivityType, string> = {
   DELETE_RESEARCHER: 'מחיקת חוקר',
   CHANGE_ROLE: 'שינוי תפקיד',
   CHANGE_PASSWORD: 'שינוי סיסמה',
+  CREATE_CHAT_MESSAGE: 'יצירת הודעת צ\'אט',
+  UPDATE_CHAT_MESSAGE: 'עדכון הודעת צ\'אט',
+  DELETE_CHAT_MESSAGE: 'מחיקת הודעת צ\'אט',
+  CREATE_CONDITION: 'יצירת תנאי',
+  UPDATE_CONDITION: 'עדכון תנאי',
+  DELETE_CONDITION: 'מחיקת תנאי',
+  RESET_CONDITION_COUNTS: 'איפוס מונה משתתפים',
 }
 
 export default function ActivityPage() {

@@ -283,7 +283,7 @@ export default function ChatPage() {
                 participatedNegotiation: state.participatedNegotiation,
                 initialOffer: state.initialOffer,
                 acceptedCounterOffer: state.acceptedCounterOffer,
-                totalDurationSeconds: chatFlow.getTotalDuration(),
+                totalDurationSeconds: chatFlow?.getTotalDuration() || 0,
               },
             }),
           })

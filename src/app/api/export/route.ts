@@ -59,7 +59,7 @@ export async function GET(request: NextRequest) {
         participated: p.result?.participatedNegotiation ? 'כן' : 'לא',
         initialOffer: p.result?.initialOffer || '',
         accepted: p.result?.acceptedCounterOffer !== null
-          ? p.result.acceptedCounterOffer
+          ? p.result?.acceptedCounterOffer
             ? 'כן'
             : 'לא'
           : '',

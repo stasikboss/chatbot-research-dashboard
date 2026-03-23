@@ -10,19 +10,17 @@ export async function GET(req: NextRequest) {
   try {
     await requireAdmin()
 
-    // Fetch all conditions with participants and results
-    const conditions = await prisma.condition.findMany({
+    // Fetch all participants with conditions and results
+    const allParticipants = await prisma.participant.findMany({
       include: {
-        participants: {
-          include: {
-            result: true,
-          },
-        },
+        condition: true,
+        result: true,
       },
     })
 
+    const conditions = await prisma.condition.findMany()
+
     // Aggregate statistics
-    const allParticipants = conditions.flatMap((c) => c.participants)
     const completedParticipants = allParticipants.filter(
       (p) => p.status === 'COMPLETED'
     )
