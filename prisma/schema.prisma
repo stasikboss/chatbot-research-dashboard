@@ -1,0 +1,206 @@
+// This is your Prisma schema file
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Researcher model for dashboard authentication
+model Researcher {
+  id            String         @id @default(cuid())
+  email         String         @unique
+  name          String
+  password      String         // hashed with bcryptjs
+  role          Role           @default(RESEARCHER)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  lastLoginAt   DateTime?
+  isActive      Boolean        @default(true)
+  loginSessions LoginSession[]
+  activityLogs  ActivityLog[]
+
+  @@index([email])
+  @@index([role])
+}
+
+enum Role {
+  ADMIN
+  RESEARCHER
+}
+
+// LoginSession model - tracks researcher logins
+model LoginSession {
+  id           String     @id @default(cuid())
+  researcherId String
+  researcher   Researcher @relation(fields: [researcherId], references: [id], onDelete: Cascade)
+  loginTime    DateTime   @default(now())
+  logoutTime   DateTime?
+  ipAddress    String?
+  userAgent    String?
+  deviceInfo   String?
+  sessionToken String?    @unique
+  isActive     Boolean    @default(true)
+
+  @@index([researcherId])
+  @@index([loginTime])
+  @@index([isActive])
+}
+
+// ActivityLog model - tracks researcher actions
+model ActivityLog {
+  id           String       @id @default(cuid())
+  researcherId String
+  researcher   Researcher   @relation(fields: [researcherId], references: [id], onDelete: Cascade)
+  action       ActivityType
+  description  String
+  metadata     Json?
+  ipAddress    String?
+  timestamp    DateTime     @default(now())
+
+  @@index([researcherId])
+  @@index([timestamp])
+  @@index([action])
+}
+
+enum ActivityType {
+  LOGIN
+  LOGOUT
+  VIEW_DASHBOARD
+  VIEW_PARTICIPANTS
+  VIEW_SESSION
+  EXPORT_DATA
+  CREATE_RESEARCHER
+  UPDATE_RESEARCHER
+  DELETE_RESEARCHER
+  CHANGE_ROLE
+  CHANGE_PASSWORD
+  CREATE_CHAT_MESSAGE
+  UPDATE_CHAT_MESSAGE
+  DELETE_CHAT_MESSAGE
+  CREATE_CONDITION
+  UPDATE_CONDITION
+  DELETE_CONDITION
+  RESET_CONDITION_COUNTS
+}
+
+// Condition model - 12 combinations (3 responseTime × 2 commStyle × 2 ageGroup)
+model Condition {
+  id                 Int           @id @default(autoincrement())
+  responseTime       ResponseTime
+  communicationStyle CommStyle
+  ageGroup           AgeGroup
+  participantCount   Int           @default(0)
+  participants       Participant[]
+
+  @@unique([responseTime, communicationStyle, ageGroup])
+}
+
+enum ResponseTime {
+  IMMEDIATE
+  DELAY_WITH_MESSAGE
+  DELAY_NO_MESSAGE
+}
+
+enum CommStyle {
+  FORMAL
+  FRIENDLY
+}
+
+enum AgeGroup {
+  YOUNG    // 18-30
+  OLD      // 50+
+}
+
+// Participant model
+model Participant {
+  id                String    @id @default(cuid())
+  age               Int
+  conditionId       Int
+  condition         Condition @relation(fields: [conditionId], references: [id])
+  deviceFingerprint String
+  status            Status    @default(IN_PROGRESS)
+  currentStep       Int       @default(1)
+  createdAt         DateTime  @default(now())
+  completedAt       DateTime?
+  messages          Message[]
+  result            Result?
+
+  @@index([deviceFingerprint])
+  @@index([status])
+  @@index([conditionId])
+}
+
+enum Status {
+  IN_PROGRESS
+  COMPLETED
+  ABANDONED
+}
+
+// Message model
+model Message {
+  id            String      @id @default(cuid())
+  participantId String
+  participant   Participant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  sender        Sender
+  content       String      @db.Text
+  stepNumber    Int
+  timestamp     DateTime    @default(now())
+
+  @@index([participantId])
+  @@index([stepNumber])
+}
+
+enum Sender {
+  USER
+  BOT
+}
+
+// Result model - stores final outcomes
+model Result {
+  id                      String      @id @default(cuid())
+  participantId           String      @unique
+  participant             Participant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  satisfactionScore       Int?        // 1-7 scale
+  participatedNegotiation Boolean     @default(false)
+  initialOffer            Int?        // 1-12 months
+  acceptedCounterOffer    Boolean?
+  totalDurationSeconds    Int
+}
+
+// ChatMessage model - manages chat flow messages
+model ChatMessage {
+  id              Int           @id @default(autoincrement())
+  stepNumber      Int           // Step number 1-13
+  messageKey      String        @unique // Unique identifier for the message
+  sender          MessageSender // BOT, USER, or SYSTEM
+  isFixed         Boolean       @default(false) // true for fixed messages (no style variations)
+
+  // Content variations by communication style
+  formalContent   String?       @db.Text // For FORMAL style (null if isFixed=true)
+  friendlyContent String?       @db.Text // For FRIENDLY style (null if isFixed=true)
+  fixedContent    String?       @db.Text // For fixed messages (e.g., user messages)
+
+  // Metadata
+  description     String?       @db.Text // Admin note about this message
+  isActive        Boolean       @default(true)
+  order           Int           @default(0) // For ordering within same step
+
+  // Audit trail
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  createdBy       String?       // researcherId
+  lastEditedBy    String?       // researcherId
+
+  @@index([stepNumber])
+  @@index([isActive])
+}
+
+enum MessageSender {
+  BOT
+  USER
+  SYSTEM
+}
