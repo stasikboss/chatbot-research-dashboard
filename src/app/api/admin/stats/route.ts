@@ -1,4 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
+// Force dynamic rendering
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 import { requireAdmin } from '@/lib/auth-helpers'
 import { prisma } from '@/lib/prisma'
 import { Role, Status } from '@prisma/client'

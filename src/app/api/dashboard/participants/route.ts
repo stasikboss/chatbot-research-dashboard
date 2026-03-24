@@ -1,4 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
+// Force dynamic rendering
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 import { prisma } from '@/lib/prisma'
 
 export async function GET(request: NextRequest) {
