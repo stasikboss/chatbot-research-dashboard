@@ -25,7 +25,10 @@
       "Bash(git remote set-url:*)",
       "Bash(vercel:*)",
       "Bash(npm run build:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(findstr:*)",
+      "Bash(dir:*)",
+      "Bash(ngrok version:*)"
     ]
   }
 }

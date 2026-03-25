@@ -6,6 +6,10 @@ import { ActivityType, MessageSender } from '@prisma/client'
 import { getClientIp } from '@/lib/ip-helpers'
 import { invalidateMessageCache } from '@/lib/message-fetcher'
 
+// Force dynamic rendering
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 /**
  * GET /api/admin/chat-messages/[id]
  * Fetch a single chat message by ID

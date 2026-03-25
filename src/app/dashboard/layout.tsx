@@ -7,7 +7,7 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { signOut } from 'next-auth/react'
 import { Role } from '@prisma/client'
-import { Shield } from 'lucide-react'
+import { Shield, Workflow } from 'lucide-react'
 
 export default function DashboardLayout({
   children,
@@ -80,6 +80,13 @@ export default function DashboardLayout({
                 className="flex items-center px-3 py-2 text-sm font-medium text-gray-700 hover:text-gray-900"
               >
                 ייצוא
+              </Link>
+              <Link
+                href="/dashboard/flow"
+                className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 hover:text-gray-900"
+              >
+                <Workflow className="h-4 w-4" />
+                תרשים זרימה
               </Link>
 
               {/* Admin Navigation - Only for ADMIN role */}
