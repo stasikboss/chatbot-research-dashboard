@@ -47,7 +47,9 @@ export enum ChatStep {
   NEGOTIATION_ASK = 10,
   COUNTER_OFFER = 11,
   FINAL_DECISION = 12,
-  CLOSING = 13,
+  SECOND_COUNTER_OFFER = 13,
+  SECOND_DECISION = 14,
+  CLOSING = 15,
 }
 
 // Chat state
@@ -59,7 +61,9 @@ export interface ChatState {
   participatedNegotiation: boolean
   initialOffer?: number
   counterOffer?: number
+  secondCounterOffer?: number
   acceptedCounterOffer?: boolean
+  acceptedSecondOffer?: boolean
   startTime: number
   lastActivityTime: number
 }

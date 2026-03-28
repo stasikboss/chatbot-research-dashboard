@@ -8,10 +8,12 @@ import { TypingIndicator } from '@/components/chat/TypingIndicator'
 import { QuickReplies, QuickReply } from '@/components/chat/QuickReplies'
 import { SatisfactionSlider } from '@/components/chat/SatisfactionSlider'
 import { MonthSelector } from '@/components/chat/MonthSelector'
+import { Questionnaire } from '@/components/chat/Questionnaire'
 import { ChatStep, Sender } from '@/types'
 import { ChatFlowManager } from '@/lib/chatFlow'
 import { getMessage, MESSAGES } from '@/lib/conditions'
 import { Condition, CommStyle } from '@prisma/client'
+import { calculateTypingDelay, getMessageGap } from '@/lib/chatTiming'
 
 interface Message {
   id: string
@@ -31,6 +33,7 @@ export default function ChatPage() {
   const [quickReplies, setQuickReplies] = useState<QuickReply[]>([])
   const [showSatisfactionSlider, setShowSatisfactionSlider] = useState(false)
   const [showMonthSelector, setShowMonthSelector] = useState(false)
+  const [showQuestionnaire, setShowQuestionnaire] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const hasInitialized = useRef(false)
 
@@ -126,17 +129,32 @@ export default function ChatPage() {
     const currentStepBeforeMessages = chatFlow.getCurrentStep()
     const responses = await chatFlow.getNextMessages()
 
-    for (const response of responses) {
-      if (response.delay && response.delay > 0) {
-        if (response.showTyping) {
-          setShowTyping(true)
-        }
-        await new Promise((resolve) => setTimeout(resolve, response.delay))
-        setShowTyping(false)
+    for (let i = 0; i < responses.length; i++) {
+      const response = responses[i]
+
+      // Calculate realistic typing delay based on message length
+      const typingDelay = response.delay && response.delay > 0
+        ? response.delay
+        : calculateTypingDelay(response.content)
+
+      // Show typing indicator
+      if (response.showTyping || typingDelay > 1000) {
+        setShowTyping(true)
       }
 
+      // Wait for "typing" to complete
+      await new Promise((resolve) => setTimeout(resolve, typingDelay))
+      setShowTyping(false)
+
+      // Add the message
       await addBotMessage(response.content, chatFlow.getCurrentStep())
-      await new Promise((resolve) => setTimeout(resolve, 500))
+
+      // Small gap before next message (if not last message)
+      if (i < responses.length - 1) {
+        await new Promise((resolve) => setTimeout(resolve, getMessageGap()))
+      } else {
+        await new Promise((resolve) => setTimeout(resolve, 300))
+      }
     }
 
     // Auto-advance for bot-only steps (no user interaction required)
@@ -176,6 +194,13 @@ export default function ChatPage() {
     }
 
     if (currentStepBeforeMessages === ChatStep.COUNTER_OFFER) {
+      await new Promise((resolve) => setTimeout(resolve, 500))
+      chatFlow.advanceStep()
+      await showBotResponses()
+      return
+    }
+
+    if (currentStepBeforeMessages === ChatStep.SECOND_COUNTER_OFFER) {
       await new Promise((resolve) => setTimeout(resolve, 500))
       chatFlow.advanceStep()
       await showBotResponses()
@@ -234,21 +259,19 @@ export default function ChatPage() {
         }, 1000)
         break
 
+      case ChatStep.SECOND_DECISION:
+        setTimeout(() => {
+          setQuickReplies([
+            { text: 'מקבל/ת', value: true },
+            { text: 'דוחה/ה', value: false },
+          ])
+        }, 1000)
+        break
+
       case ChatStep.CLOSING:
-        // Complete chat
-        setTimeout(async () => {
-          if (participantId) {
-            await fetch('/api/messages', {
-              method: 'PATCH',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                participantId,
-                status: 'COMPLETED',
-                completedAt: new Date().toISOString(),
-              }),
-            })
-          }
-          router.push('/complete')
+        // Show questionnaire after closing messages
+        setTimeout(() => {
+          setShowQuestionnaire(true)
         }, 2000)
         break
     }
@@ -265,8 +288,11 @@ export default function ChatPage() {
     } else if (currentStep === ChatStep.FINAL_DECISION) {
       const text = value ? 'מקבל/ת' : 'דוחה/ה'
       await addUserMessage(text, currentStep, { acceptCounterOffer: value })
+    } else if (currentStep === ChatStep.SECOND_DECISION) {
+      const text = value ? 'מקבל/ת' : 'דוחה/ה'
+      await addUserMessage(text, currentStep, { acceptSecondOffer: value })
 
-      // Save result after advancing
+      // Save final result with both offers
       setTimeout(async () => {
         const state = chatFlow?.getState()
         if (participantId && state) {
@@ -282,7 +308,10 @@ export default function ChatPage() {
                 satisfactionScore: state.satisfactionScore,
                 participatedNegotiation: state.participatedNegotiation,
                 initialOffer: state.initialOffer,
+                counterOffer: state.counterOffer,
+                secondCounterOffer: state.secondCounterOffer,
                 acceptedCounterOffer: state.acceptedCounterOffer,
+                acceptedSecondOffer: state.acceptedSecondOffer,
                 totalDurationSeconds: chatFlow?.getTotalDuration() || 0,
               },
             }),
@@ -300,6 +329,38 @@ export default function ChatPage() {
   const handleMonthSelect = async (months: number) => {
     setShowMonthSelector(false)
     await addUserMessage(`${months} חודשים`, currentStep, { initialOffer: months })
+  }
+
+  const handleQuestionnaireSubmit = async (responses: any) => {
+    setShowQuestionnaire(false)
+
+    // Save questionnaire responses
+    if (participantId) {
+      await fetch('/api/questionnaire', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          participantId,
+          ...responses,
+        }),
+      })
+    }
+
+    // Mark participant as completed
+    if (participantId) {
+      await fetch('/api/messages', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          participantId,
+          status: 'COMPLETED',
+          completedAt: new Date().toISOString(),
+        }),
+      })
+    }
+
+    // Redirect to complete page
+    router.push('/complete')
   }
 
   if (!participantId || !condition) {
@@ -333,6 +394,10 @@ export default function ChatPage() {
 
       {showMonthSelector && (
         <MonthSelector onSelect={handleMonthSelect} />
+      )}
+
+      {showQuestionnaire && (
+        <Questionnaire onSubmit={handleQuestionnaireSubmit} />
       )}
     </ChatContainer>
   )

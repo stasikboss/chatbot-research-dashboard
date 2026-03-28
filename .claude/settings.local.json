@@ -28,7 +28,8 @@
       "Bash(find:*)",
       "Bash(findstr:*)",
       "Bash(dir:*)",
-      "Bash(ngrok version:*)"
+      "Bash(ngrok version:*)",
+      "Bash(ls:*)"
     ]
   }
 }

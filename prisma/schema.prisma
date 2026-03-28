@@ -117,17 +117,18 @@ enum AgeGroup {
 
 // Participant model
 model Participant {
-  id                String    @id @default(cuid())
-  age               Int
-  conditionId       Int
-  condition         Condition @relation(fields: [conditionId], references: [id])
-  deviceFingerprint String
-  status            Status    @default(IN_PROGRESS)
-  currentStep       Int       @default(1)
-  createdAt         DateTime  @default(now())
-  completedAt       DateTime?
-  messages          Message[]
-  result            Result?
+  id                     String                  @id @default(cuid())
+  age                    Int
+  conditionId            Int
+  condition              Condition               @relation(fields: [conditionId], references: [id])
+  deviceFingerprint      String
+  status                 Status                  @default(IN_PROGRESS)
+  currentStep            Int                     @default(1)
+  createdAt              DateTime                @default(now())
+  completedAt            DateTime?
+  messages               Message[]
+  result                 Result?
+  questionnaireResponse  QuestionnaireResponse?
 
   @@index([deviceFingerprint])
   @@index([status])
@@ -167,8 +168,13 @@ model Result {
   satisfactionScore       Int?        // 1-7 scale
   participatedNegotiation Boolean     @default(false)
   initialOffer            Int?        // 1-12 months
-  acceptedCounterOffer    Boolean?
-  totalDurationSeconds    Int
+  counterOffer            Int?        // First offer (X-2)
+  secondCounterOffer      Int?        // Second offer (X-1)
+  acceptedCounterOffer    Boolean?    // Response to first offer
+  acceptedSecondOffer     Boolean?    // Response to second offer
+  totalDurationSeconds    Int?
+  createdAt               DateTime    @default(now())
+  updatedAt               DateTime    @updatedAt
 }
 
 // ChatMessage model - manages chat flow messages
@@ -203,4 +209,27 @@ enum MessageSender {
   BOT
   USER
   SYSTEM
+}
+
+// QuestionnaireResponse model - stores end questionnaire responses
+model QuestionnaireResponse {
+  id                   String      @id @default(cuid())
+  participantId        String      @unique
+  participant          Participant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+
+  // Process & outcome satisfaction (1-5 scale)
+  processSatisfaction  Int?        // "עד כמה היית מרוצה מתהליך המשא ומתן"
+  outcomeSatisfaction  Int?        // "עד כמה היית מרוצה מתוצאות המשא ומתן"
+  futureIntention      Int?        // "כמה תהיה מעוניין בעתיד לקיים משא ומתן"
+
+  // Open feedback
+  feedback             String?     @db.Text
+
+  // Demographics
+  ageGroup             String?     // "18-30", "31-40", "41-50", "51-60", "61-70", "מעל 70"
+  gender               String?     // "נקבה", "זכר", "מעדיף.ה לא לציין"
+
+  createdAt            DateTime    @default(now())
+
+  @@index([participantId])
 }

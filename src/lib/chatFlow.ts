@@ -152,19 +152,45 @@ export class ChatFlowManager {
         // User accepts or rejects (handled by UI)
         break
 
-      case ChatStep.CLOSING:
-        if (this.state.acceptedCounterOffer === true) {
+      case ChatStep.SECOND_COUNTER_OFFER:
+        if (this.state.initialOffer) {
+          const secondOffer = Math.max(1, this.state.initialOffer - 1)
+          this.state.secondCounterOffer = secondOffer
           messages.push({
-            content: getMessage('acceptedOffer', style),
+            content: getMessage('secondCounterOffer', style, secondOffer),
+            delay: 1500,
+          })
+        }
+        break
+
+      case ChatStep.SECOND_DECISION:
+        // User accepts or rejects second offer (handled by UI)
+        break
+
+      case ChatStep.CLOSING:
+        // Choose message based on negotiation outcome
+        if (this.state.acceptedCounterOffer === true) {
+          // Accepted first offer (X-2)
+          const acceptedMonths = this.state.counterOffer || 0
+          messages.push({
+            content: getMessage('acceptedFirstOffer', style, acceptedMonths),
             delay: 1000,
           })
-        } else if (this.state.acceptedCounterOffer === false) {
+        } else if (this.state.acceptedSecondOffer === true) {
+          // Accepted second offer (X-1)
+          const acceptedMonths = this.state.secondCounterOffer || 0
           messages.push({
-            content: getMessage('rejectedOffer', style),
+            content: getMessage('acceptedSecondOffer', style, acceptedMonths),
+            delay: 1000,
+          })
+        } else if (this.state.acceptedCounterOffer === false && this.state.acceptedSecondOffer === false) {
+          // Rejected both offers
+          messages.push({
+            content: getMessage('rejectedBothOffers', style),
             delay: 1000,
           })
         } else {
-          // Declined negotiation
+          // Declined negotiation entirely
           messages.push({
             content: getMessage('declinedNegotiation', style),
             delay: 1000,
@@ -238,8 +264,22 @@ export class ChatFlowManager {
         break
 
       case ChatStep.FINAL_DECISION:
-        if (userInput?.acceptCounterOffer !== undefined) {
-          this.state.acceptedCounterOffer = userInput.acceptCounterOffer
+        if (userInput?.acceptCounterOffer === true) {
+          this.state.acceptedCounterOffer = true
+          this.state.currentStep = ChatStep.CLOSING  // Accept → end
+        } else if (userInput?.acceptCounterOffer === false) {
+          this.state.acceptedCounterOffer = false
+          this.state.currentStep = ChatStep.SECOND_COUNTER_OFFER  // Reject → second offer
+        }
+        break
+
+      case ChatStep.SECOND_COUNTER_OFFER:
+        this.state.currentStep = ChatStep.SECOND_DECISION
+        break
+
+      case ChatStep.SECOND_DECISION:
+        if (userInput?.acceptSecondOffer !== undefined) {
+          this.state.acceptedSecondOffer = userInput.acceptSecondOffer
         }
         this.state.currentStep = ChatStep.CLOSING
         break

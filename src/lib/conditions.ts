@@ -39,9 +39,9 @@ export const MESSAGES = {
   // Step 6: Compensation offer
   compensationOffer: {
     [CommStyle.FORMAL]:
-      'בינתיים, לשיפור חוויית השימוש - שודרגה מהירות הגלישה שלך באופן זמני, ללא תוספת תשלום.\nתודה על הסבלנות וההבנה.',
+      'לשם שיפור חווייתך בזמן הטיפול בתקלה - הוענקה לך ארוחת בוקר זוגית, ללא כל עלות.\nנעדכן אותך מיד עם פתרון התקלה.\nתודה על סבלנותך.',
     [CommStyle.FRIENDLY]:
-      'כדי שיהיה לך קצת יותר נעים בינתיים - שדרגנו לך את מהירות הגלישה, על חשבוננו 💙\nנעדכן כשנפתור את התקלה. תודה על הסבלנות!',
+      'בינתיים, כדי שיהיה לך קצת יותר נעים בינתיים - קיבלת מאיתנו ארוחת בוקר זוגית, על חשבוננו 💙\nנעדכן כשנפתור את התקלה. תודה על הסבלנות!',
   },
 
   // Step 7: Satisfaction question (shown as slider 1-7)
@@ -74,16 +74,32 @@ export const MESSAGES = {
     [CommStyle.FRIENDLY]: (months: number) => `נשמח להציע לך ${months} חודשים לשדרוג 😊`,
   },
 
-  // Step 11: Closing messages
-  acceptedOffer: {
-    [CommStyle.FORMAL]:
-      'תודה רבה. השדרוג יופעל בהקדם. נשמח לעמוד לשירותך בעתיד.',
-    [CommStyle.FRIENDLY]: 'מעולה! השדרוג בדרך אליך. תודה ולהתראות! 😊',
+  // Step 13: Second counter offer (X-1 months)
+  secondCounterOffer: {
+    [CommStyle.FORMAL]: (months: number) =>
+      `אנו מציעים להעניק לך שדרוג לתקופה של ${months} חודשים.`,
+    [CommStyle.FRIENDLY]: (months: number) =>
+      `נשמח להציע לך ${months} חודשים לשדרוג 😊`,
   },
 
-  rejectedOffer: {
-    [CommStyle.FORMAL]: 'אנו מצטערים שלא הגענו להסכמות. נשמח לעמוד לשירותך בעתיד.',
-    [CommStyle.FRIENDLY]: 'חבל שלא הסתדר הפעם. מקווים לעזור בהזדמנות אחרת! 🙏',
+  // Step 15: Closing messages (different per outcome)
+  acceptedFirstOffer: {
+    [CommStyle.FORMAL]: (months: number) =>
+      `אנו שמחים להציע לך ${months} חודשי גלישה במהירות משודרגת. תודה על שיתוף הפעולה.`,
+    [CommStyle.FRIENDLY]: (months: number) =>
+      `איזה כיף! קיבלת את ${months} חודשי הגלישה המשודרגת שסיכמנו עליהם, תודה שהיית/ה שותף/ה לדרך 💙`,
+  },
+
+  acceptedSecondOffer: {
+    [CommStyle.FORMAL]: (months: number) =>
+      `אנו שמחים להעניק לך ${months} חודשי גלישה במהירות משודרגת. תודה על שיתוף הפעולה.`,
+    [CommStyle.FRIENDLY]: (months: number) =>
+      `איזה כיף! קיבלת את ${months} חודשי הגלישה המשודרגת שסיכמנו עליהם, תודה שהיית/ה שותף/ה לדרך 💙`,
+  },
+
+  rejectedBothOffers: {
+    [CommStyle.FORMAL]: 'צר לנו שלא הגענו להסכמות, מאחלים לך הרבה הצלחה בהמשך.',
+    [CommStyle.FRIENDLY]: 'לא הסתדר הפעם, מאחלים לך הצלחה רבה בהמשך! 🙏',
   },
 
   declinedNegotiation: {

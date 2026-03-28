@@ -1,6 +1,6 @@
 'use client'
 
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 
@@ -16,17 +16,30 @@ interface QuickRepliesProps {
 }
 
 export function QuickReplies({ replies, onSelect, className }: QuickRepliesProps) {
+  const [isVisible, setIsVisible] = useState(false)
+
+  useEffect(() => {
+    const timer = setTimeout(() => setIsVisible(true), 100)
+    return () => clearTimeout(timer)
+  }, [])
+
   return (
     <div className={cn('flex flex-col gap-2 items-end px-4 py-2', className)}>
       {replies.map((reply, index) => (
-        <Button
+        <button
           key={index}
           onClick={() => onSelect(reply.value)}
-          variant="outline"
-          className="bg-white hover:bg-gray-50 text-whatsapp-teal border-whatsapp-teal shadow-sm"
+          className={cn(
+            'px-4 py-2.5 rounded-full border-2 border-whatsapp-teal bg-white text-whatsapp-teal font-medium shadow-md hover:bg-whatsapp-teal hover:text-white transition-all duration-200 active:scale-95',
+            'transform transition-all duration-300 ease-out',
+            isVisible ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-4'
+          )}
+          style={{
+            transitionDelay: `${index * 100}ms`,
+          }}
         >
           {reply.text}
-        </Button>
+        </button>
       ))}
     </div>
   )
