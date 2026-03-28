@@ -31,7 +31,8 @@
       "Bash(ngrok version:*)",
       "Bash(ls:*)",
       "WebFetch(domain:chatbot-dashboard-iota-nine.vercel.app)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(node verify-production.js:*)"
     ]
   }
 }
