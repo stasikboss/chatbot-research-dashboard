@@ -29,7 +29,9 @@
       "Bash(findstr:*)",
       "Bash(dir:*)",
       "Bash(ngrok version:*)",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "WebFetch(domain:chatbot-dashboard-iota-nine.vercel.app)",
+      "Bash(curl:*)"
     ]
   }
 }

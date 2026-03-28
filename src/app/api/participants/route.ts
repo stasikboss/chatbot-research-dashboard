@@ -3,6 +3,8 @@ import { prisma } from '@/lib/prisma'
 import { AgeGroup, Status } from '@prisma/client'
 import { validateAge } from '@/lib/utils'
 
+export const dynamic = 'force-dynamic'
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
