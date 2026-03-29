@@ -10,6 +10,7 @@ import { getOrCreateFingerprint } from '@/lib/fingerprint'
 
 export default function RegisterPage() {
   const router = useRouter()
+  const [name, setName] = useState('')
   const [age, setAge] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
@@ -24,6 +25,12 @@ export default function RegisterPage() {
     if (shiftHeld) {
       setAdminMode(true)
       console.log('🔧 Admin mode activated - bypass duplicate participant check')
+    }
+
+    // Validate name
+    if (!name.trim()) {
+      setError('נא להזין שם')
+      return
     }
 
     const ageNum = parseInt(age)
@@ -50,6 +57,7 @@ export default function RegisterPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          name: name.trim(),
           age: ageNum,
           deviceFingerprint: fingerprint,
           adminMode: shiftHeld,
@@ -99,6 +107,22 @@ export default function RegisterPage() {
         <CardContent className="space-y-6">
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
+              <label htmlFor="name" className="text-sm font-medium">
+                מה שמך?
+              </label>
+              <Input
+                id="name"
+                type="text"
+                placeholder="הזן שם מלא"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required
+                className="text-center text-lg"
+                dir="rtl"
+              />
+            </div>
+
+            <div className="space-y-2">
               <label htmlFor="age" className="text-sm font-medium">
                 מה הגיל שלך?
               </label>
@@ -143,7 +167,7 @@ export default function RegisterPage() {
 
             <Button
               type="submit"
-              disabled={loading || !age}
+              disabled={loading || !name.trim() || !age}
               className="w-full"
               size="lg"
               onMouseDown={(e: React.MouseEvent) => {

@@ -118,6 +118,7 @@ enum AgeGroup {
 // Participant model
 model Participant {
   id                     String                  @id @default(cuid())
+  name                   String?                 // Participant's name (optional for existing participants)
   age                    Int
   conditionId            Int
   condition              Condition               @relation(fields: [conditionId], references: [id])

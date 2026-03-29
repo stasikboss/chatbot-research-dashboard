@@ -8,7 +8,15 @@ export const dynamic = 'force-dynamic'
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { age, deviceFingerprint, adminMode } = body
+    const { name, age, deviceFingerprint, adminMode } = body
+
+    // Validate name
+    if (!name || typeof name !== 'string' || !name.trim()) {
+      return NextResponse.json(
+        { error: 'נא להזין שם תקין' },
+        { status: 400 }
+      )
+    }
 
     // Validate age
     const ageValidation = validateAge(age)
@@ -64,6 +72,7 @@ export async function POST(request: NextRequest) {
     // Create participant
     const participant = await prisma.participant.create({
       data: {
+        name: name.trim(),
         age,
         deviceFingerprint,
         conditionId: selectedCondition.id,
