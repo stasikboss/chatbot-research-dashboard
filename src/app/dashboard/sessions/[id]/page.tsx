@@ -23,6 +23,11 @@ export default function SessionPage() {
   const fetchSession = async () => {
     try {
       const response = await fetch(`/api/participants?participantId=${params.id}`)
+      if (!response.ok) {
+        setParticipant(null)
+        return
+      }
+
       const data = await response.json()
       setParticipant(data)
     } catch (error) {

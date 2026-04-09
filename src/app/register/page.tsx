@@ -1,17 +1,18 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { validateAge } from '@/lib/utils'
 import { getOrCreateFingerprint } from '@/lib/fingerprint'
+
+const ageGroups = ['18-30', '31-40', '41-50', '51-60', '61-70', 'מעל 70']
+const genders = ['זכר', 'נקבה', 'אחר']
 
 export default function RegisterPage() {
   const router = useRouter()
-  const [name, setName] = useState('')
-  const [age, setAge] = useState('')
+  const [ageGroup, setAgeGroup] = useState<string>('')
+  const [gender, setGender] = useState<string>('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [adminMode, setAdminMode] = useState(false)
@@ -27,23 +28,41 @@ export default function RegisterPage() {
       console.log('🔧 Admin mode activated - bypass duplicate participant check')
     }
 
-    // Validate name
-    if (!name.trim()) {
-      setError('נא להזין שם')
+    // Validate age group
+    if (!ageGroup) {
+      setError('נא לבחור קבוצת גיל')
       return
     }
 
-    const ageNum = parseInt(age)
-    if (isNaN(ageNum)) {
-      setError('נא להזין גיל תקין')
+    // Validate gender
+    if (!gender) {
+      setError('נא לבחור מגדר')
       return
     }
 
-    // Validate age
-    const validation = validateAge(ageNum)
-    if (!validation.valid) {
-      setError(validation.error || 'גיל לא תקין')
-      return
+    // Convert age group to representative age for database
+    let age: number
+    switch (ageGroup) {
+      case '18-30':
+        age = 25
+        break
+      case '31-40':
+        age = 35
+        break
+      case '41-50':
+        age = 45
+        break
+      case '51-60':
+        age = 55
+        break
+      case '61-70':
+        age = 65
+        break
+      case 'מעל 70':
+        age = 75
+        break
+      default:
+        age = 25
     }
 
     setLoading(true)
@@ -57,8 +76,9 @@ export default function RegisterPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          name: name.trim(),
-          age: ageNum,
+          age,
+          ageGroup,
+          gender,
           deviceFingerprint: fingerprint,
           adminMode: shiftHeld,
         }),
@@ -86,6 +106,7 @@ export default function RegisterPage() {
       localStorage.setItem('participantId', data.participantId)
       localStorage.setItem('conditionId', data.conditionId)
       localStorage.setItem('condition', JSON.stringify(data.condition))
+      localStorage.setItem('participantToken', data.participantToken)
       localStorage.setItem('startTime', Date.now().toString())
 
       // Navigate to chat
@@ -105,47 +126,68 @@ export default function RegisterPage() {
           <CardDescription>נא למלא את הפרטים הבאים להתחלת המחקר</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <label htmlFor="name" className="text-sm font-medium">
-                מה שמך?
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Age Group Selection */}
+            <div className="space-y-3">
+              <label className="text-sm font-medium block">
+                מה קבוצת הגיל שלך?
               </label>
-              <Input
-                id="name"
-                type="text"
-                placeholder="הזן שם מלא"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                required
-                className="text-center text-lg"
-                dir="rtl"
-              />
+              <div className="grid grid-cols-2 gap-2">
+                {ageGroups.map((group) => (
+                  <label
+                    key={group}
+                    className={`flex items-center justify-center gap-2 p-3 border-2 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors ${
+                      ageGroup === group ? 'border-blue-500 bg-blue-50' : 'border-gray-200'
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="ageGroup"
+                      value={group}
+                      checked={ageGroup === group}
+                      onChange={(e) => setAgeGroup(e.target.value)}
+                      className="w-4 h-4 text-blue-600"
+                    />
+                    <span className="text-base font-medium">{group}</span>
+                  </label>
+                ))}
+              </div>
             </div>
 
-            <div className="space-y-2">
-              <label htmlFor="age" className="text-sm font-medium">
-                מה הגיל שלך?
+            {/* Gender Selection */}
+            <div className="space-y-3">
+              <label className="text-sm font-medium block">
+                מה המגדר שלך?
               </label>
-              <Input
-                id="age"
-                type="number"
-                placeholder="הזן גיל"
-                value={age}
-                onChange={(e) => setAge(e.target.value)}
-                min="18"
-                max="120"
-                required
-                className="text-center text-lg"
-                dir="ltr"
-              />
-              <p className="text-xs text-gray-500 text-center">
-                המחקר מיועד לגילאי 18+
-              </p>
+              <div className="grid grid-cols-3 gap-2">
+                {genders.map((g) => (
+                  <label
+                    key={g}
+                    className={`flex items-center justify-center gap-2 p-3 border-2 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors ${
+                      gender === g ? 'border-blue-500 bg-blue-50' : 'border-gray-200'
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="gender"
+                      value={g}
+                      checked={gender === g}
+                      onChange={(e) => setGender(e.target.value)}
+                      className="w-4 h-4 text-blue-600"
+                    />
+                    <span className="text-base font-medium">{g}</span>
+                  </label>
+                ))}
+              </div>
             </div>
 
             {adminMode && (
-              <div className="bg-purple-50 border border-purple-200 text-purple-700 px-4 py-3 rounded text-sm">
-                🔧 מצב מנהל פעיל - ניתן לבצע את המבחן מספר פעמים
+              <div className="bg-purple-50 border-2 border-purple-500 text-purple-900 px-4 py-3 rounded text-sm font-semibold">
+                🔧 מצב בדיקות פעיל
+                <div className="text-xs font-normal mt-1">
+                  • ניתן לבצע את המבחן מספר פעמים<br/>
+                  • לא ייספר בסטטיסטיקות המחקר
+                </div>
               </div>
             )}
 
@@ -163,11 +205,14 @@ export default function RegisterPage() {
                 <li>השב על השאלות בצורה כנה</li>
                 <li>אין תשובות נכונות או לא נכונות</li>
               </ul>
+              <div className="mt-3 pt-3 border-t border-blue-300 text-xs text-gray-600">
+                💡 טיפ לחוקרים: החזק Shift + לחץ על "התחל שיחה" למצב בדיקות
+              </div>
             </div>
 
             <Button
               type="submit"
-              disabled={loading || !name.trim() || !age}
+              disabled={loading || !ageGroup || !gender}
               className="w-full"
               size="lg"
               onMouseDown={(e: React.MouseEvent) => {

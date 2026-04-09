@@ -120,6 +120,9 @@ model Participant {
   id                     String                  @id @default(cuid())
   name                   String?                 // Participant's name (optional for existing participants)
   age                    Int
+  ageGroup               String?                 // "18-30", "31-40", "41-50", "51-60", "61-70", "מעל 70"
+  gender                 String?                 // "זכר", "נקבה", "אחר"
+  isTestUser             Boolean                 @default(false) // Test/admin users (excluded from statistics)
   conditionId            Int
   condition              Condition               @relation(fields: [conditionId], references: [id])
   deviceFingerprint      String
@@ -134,6 +137,7 @@ model Participant {
   @@index([deviceFingerprint])
   @@index([status])
   @@index([conditionId])
+  @@index([isTestUser])
 }
 
 enum Status {

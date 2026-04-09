@@ -2,21 +2,32 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { AgeGroup, Status } from '@prisma/client'
 import { validateAge } from '@/lib/utils'
+import { createParticipantAccessToken } from '@/lib/participant-access'
+import { getClientIp } from '@/lib/ip-helpers'
+import { checkRateLimit } from '@/lib/rate-limit'
+import { requireAuth } from '@/lib/auth-helpers'
 
 export const dynamic = 'force-dynamic'
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
-    const { name, age, deviceFingerprint, adminMode } = body
-
-    // Validate name
-    if (!name || typeof name !== 'string' || !name.trim()) {
+    const ip = getClientIp(request) || 'unknown'
+    const rateLimit = checkRateLimit(`participants:create:${ip}`, 15, 60 * 1000)
+    if (!rateLimit.allowed) {
       return NextResponse.json(
-        { error: 'נא להזין שם תקין' },
-        { status: 400 }
+        { error: 'Too many requests' },
+        { status: 429, headers: { 'Retry-After': String(rateLimit.retryAfterSeconds) } }
       )
     }
+
+    let body: any
+    try {
+      body = await request.json()
+    } catch {
+      return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
+    }
+
+    const { age, ageGroup: userAgeGroup, gender, deviceFingerprint, adminMode } = body
 
     // Validate age
     const ageValidation = validateAge(age)
@@ -46,7 +57,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Get age group
+    // Get age group for condition (YOUNG or OLD)
     const ageGroup = ageValidation.ageGroup as 'YOUNG' | 'OLD'
 
     // Find condition with lowest participant count for this age group
@@ -72,8 +83,10 @@ export async function POST(request: NextRequest) {
     // Create participant
     const participant = await prisma.participant.create({
       data: {
-        name: name.trim(),
         age,
+        ageGroup: userAgeGroup || null,
+        gender: gender || null,
+        isTestUser: adminMode || false,
         deviceFingerprint,
         conditionId: selectedCondition.id,
         status: Status.IN_PROGRESS,
@@ -84,20 +97,23 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    // Increment participant count for this condition
-    await prisma.condition.update({
-      where: { id: selectedCondition.id },
-      data: {
-        participantCount: {
-          increment: 1,
+    // Increment participant count for this condition (only for real participants)
+    if (!adminMode) {
+      await prisma.condition.update({
+        where: { id: selectedCondition.id },
+        data: {
+          participantCount: {
+            increment: 1,
+          },
         },
-      },
-    })
+      })
+    }
 
     return NextResponse.json({
       participantId: participant.id,
       conditionId: participant.conditionId,
       condition: participant.condition,
+      participantToken: createParticipantAccessToken(participant.id),
     })
   } catch (error) {
     console.error('Error creating participant:', error)
@@ -110,6 +126,8 @@ export async function POST(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   try {
+    await requireAuth()
+
     const { searchParams } = new URL(request.url)
     const participantId = searchParams.get('participantId')
 
@@ -140,6 +158,10 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(participant)
   } catch (error) {
+    if (error instanceof Error && error.message.includes('Unauthorized')) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
     console.error('Error fetching participant:', error)
     return NextResponse.json(
       { error: 'Internal server error' },

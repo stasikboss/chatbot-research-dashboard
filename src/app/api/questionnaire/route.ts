@@ -1,11 +1,48 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { verifyParticipantAccessToken } from '@/lib/participant-access'
+import { requireAuth } from '@/lib/auth-helpers'
+import { checkRateLimit } from '@/lib/rate-limit'
+import { getClientIp } from '@/lib/ip-helpers'
 
 export const dynamic = 'force-dynamic'
 
+async function isAuthorizedParticipantRequest(
+  request: NextRequest,
+  participantId: string
+): Promise<boolean> {
+  const participantToken = request.headers.get('x-participant-token')
+
+  if (verifyParticipantAccessToken(participantId, participantToken)) {
+    return true
+  }
+
+  try {
+    await requireAuth()
+    return true
+  } catch {
+    return false
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
+    const ip = getClientIp(request) || 'unknown'
+    const rateLimit = checkRateLimit(`questionnaire:post:${ip}`, 20, 60 * 1000)
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        { error: 'Too many requests' },
+        { status: 429, headers: { 'Retry-After': String(rateLimit.retryAfterSeconds) } }
+      )
+    }
+
+    let body: any
+    try {
+      body = await request.json()
+    } catch {
+      return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
+    }
+
     const {
       participantId,
       processSatisfaction,
@@ -22,6 +59,11 @@ export async function POST(request: NextRequest) {
         { error: 'participantId is required' },
         { status: 400 }
       )
+    }
+
+    const isAuthorized = await isAuthorizedParticipantRequest(request, participantId)
+    if (!isAuthorized) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     if (!processSatisfaction || !outcomeSatisfaction || !futureIntention) {

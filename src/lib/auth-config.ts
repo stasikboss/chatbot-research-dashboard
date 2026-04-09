@@ -26,6 +26,10 @@ export const authOptions: NextAuthOptions = {
           return null
         }
 
+        if (!researcher.isActive) {
+          return null
+        }
+
         const isPasswordValid = await bcrypt.compare(
           credentials.password,
           researcher.password

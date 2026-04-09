@@ -28,6 +28,7 @@ export default function ChatPage() {
   const [showTyping, setShowTyping] = useState(false)
   const [currentStep, setCurrentStep] = useState<ChatStep>(ChatStep.OPENING)
   const [participantId, setParticipantId] = useState<string | null>(null)
+  const [participantToken, setParticipantToken] = useState<string | null>(null)
   const [condition, setCondition] = useState<Condition | null>(null)
   const [chatFlow, setChatFlow] = useState<ChatFlowManager | null>(null)
   const [quickReplies, setQuickReplies] = useState<QuickReply[]>([])
@@ -40,14 +41,16 @@ export default function ChatPage() {
   // Initialize chat
   useEffect(() => {
     const pid = localStorage.getItem('participantId')
+    const token = localStorage.getItem('participantToken')
     const cond = localStorage.getItem('condition')
 
-    if (!pid || !cond) {
+    if (!pid || !token || !cond) {
       router.push('/register')
       return
     }
 
     setParticipantId(pid)
+    setParticipantToken(token)
     const parsedCondition = JSON.parse(cond)
     setCondition(parsedCondition)
 
@@ -80,10 +83,13 @@ export default function ChatPage() {
     setMessages((prev) => [...prev, newMessage])
 
     // Save to database
-    if (participantId) {
+    if (participantId && participantToken) {
       await fetch('/api/messages', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'x-participant-token': participantToken,
+        },
         body: JSON.stringify({
           participantId,
           sender: 'USER',
@@ -109,10 +115,13 @@ export default function ChatPage() {
     setMessages((prev) => [...prev, newMessage])
 
     // Save to database
-    if (participantId) {
+    if (participantId && participantToken) {
       await fetch('/api/messages', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'x-participant-token': participantToken,
+        },
         body: JSON.stringify({
           participantId,
           sender: 'BOT',
@@ -295,10 +304,13 @@ export default function ChatPage() {
       // Save final result with both offers
       setTimeout(async () => {
         const state = chatFlow?.getState()
-        if (participantId && state) {
+        if (participantId && participantToken && state) {
           await fetch('/api/messages', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+              'Content-Type': 'application/json',
+              'x-participant-token': participantToken,
+            },
             body: JSON.stringify({
               participantId,
               sender: 'SYSTEM',
@@ -335,10 +347,13 @@ export default function ChatPage() {
     setShowQuestionnaire(false)
 
     // Save questionnaire responses
-    if (participantId) {
+    if (participantId && participantToken) {
       await fetch('/api/questionnaire', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'x-participant-token': participantToken,
+        },
         body: JSON.stringify({
           participantId,
           ...responses,
@@ -347,10 +362,13 @@ export default function ChatPage() {
     }
 
     // Mark participant as completed
-    if (participantId) {
+    if (participantId && participantToken) {
       await fetch('/api/messages', {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'x-participant-token': participantToken,
+        },
         body: JSON.stringify({
           participantId,
           status: 'COMPLETED',
@@ -363,7 +381,7 @@ export default function ChatPage() {
     router.push('/complete')
   }
 
-  if (!participantId || !condition) {
+  if (!participantId || !participantToken || !condition) {
     return null
   }
 
