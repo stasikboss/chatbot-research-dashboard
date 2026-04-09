@@ -1,0 +1,31 @@
+{
+  "approvalMode": "allowlist",
+  "permissions": {
+    "allow": [
+      "ReadFile(**)",
+      "Glob(**)",
+      "rg(**)",
+      "SemanticSearch(**)",
+      "ApplyPatch(**)",
+      "Delete(**)",
+      "EditNotebook(**)",
+      "TodoWrite(**)",
+      "Shell(ls*)",
+      "Shell(dir*)",
+      "Shell(pwd*)",
+      "Shell(echo*)",
+      "Shell(git status*)",
+      "Shell(git diff*)",
+      "Shell(git log*)",
+      "Shell(git branch*)",
+      "Shell(git switch*)",
+      "Shell(git checkout -b*)",
+      "Shell(git add*)",
+      "Shell(git commit*)",
+      "Shell(npm run*)",
+      "Shell(npx prisma*)",
+      "Shell(node*)"
+    ],
+    "deny": []
+  }
+}
