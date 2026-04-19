@@ -70,31 +70,31 @@ export const MESSAGES = {
   // Step 10: Counter offer (X-2 months)
   counterOffer: {
     [CommStyle.FORMAL]: (months: number) =>
-      `אנו מציעים להעניק לך שדרוג לתקופה של ${months} חודשים.`,
-    [CommStyle.FRIENDLY]: (months: number) => `נשמח להציע לך ${months} חודשים לשדרוג 😊`,
+      `אנו מציעים להעניק לך שדרוג לתקופה של ${formatMonths(months)}.`,
+    [CommStyle.FRIENDLY]: (months: number) => `נשמח להציע לך ${formatMonths(months)} לשדרוג 😊`,
   },
 
   // Step 13: Second counter offer (X-1 months)
   secondCounterOffer: {
     [CommStyle.FORMAL]: (months: number) =>
-      `אנו מציעים להעניק לך שדרוג לתקופה של ${months} חודשים.`,
+      `זאת ההצעה האחרונה שלנו: אנו מציעים להעניק לך שדרוג לתקופה של ${formatMonths(months)}.`,
     [CommStyle.FRIENDLY]: (months: number) =>
-      `נשמח להציע לך ${months} חודשים לשדרוג 😊`,
+      `זאת ההצעה האחרונה שלנו - נשמח להציע לך ${formatMonths(months)} לשדרוג 😊`,
   },
 
   // Step 15: Closing messages (different per outcome)
   acceptedFirstOffer: {
     [CommStyle.FORMAL]: (months: number) =>
-      `אנו שמחים להציע לך ${months} חודשי גלישה במהירות משודרגת. תודה על שיתוף הפעולה.`,
+      `אנו שמחים להעניק לך ${formatMonths(months)} גלישה במהירות משודרגת. תודה על שיתוף הפעולה.`,
     [CommStyle.FRIENDLY]: (months: number) =>
-      `איזה כיף! קיבלת את ${months} חודשי הגלישה המשודרגת שסיכמנו עליהם, תודה שהיית/ה שותף/ה לדרך 💙`,
+      `איזה כיף! קיבלת ${formatMonths(months)} גלישה במהירות משודרגת שסיכמנו עליהם, תודה שהיית/ה שותף/ה לדרך 💙`,
   },
 
   acceptedSecondOffer: {
     [CommStyle.FORMAL]: (months: number) =>
-      `אנו שמחים להעניק לך ${months} חודשי גלישה במהירות משודרגת. תודה על שיתוף הפעולה.`,
+      `אנו שמחים להעניק לך ${formatMonths(months)} גלישה במהירות משודרגת. תודה על שיתוף הפעולה.`,
     [CommStyle.FRIENDLY]: (months: number) =>
-      `איזה כיף! קיבלת את ${months} חודשי הגלישה המשודרגת שסיכמנו עליהם, תודה שהיית/ה שותף/ה לדרך 💙`,
+      `איזה כיף! קיבלת ${formatMonths(months)} גלישה במהירות משודרגת שסיכמנו עליהם, תודה שהיית/ה שותף/ה לדרך 💙`,
   },
 
   rejectedBothOffers: {
@@ -124,6 +124,17 @@ export const QUICK_REPLIES = {
 export const SATISFACTION_LABELS = {
   min: 'לא מרוצה כלל',
   max: 'מרוצה מאוד',
+}
+
+// Helper function to format months in proper Hebrew
+export function formatMonths(months: number): string {
+  if (months === 1) {
+    return 'חודש אחד'
+  } else if (months === 2) {
+    return 'חודשיים'
+  } else {
+    return `${months} חודשים`
+  }
 }
 
 // Helper function to get message based on communication style

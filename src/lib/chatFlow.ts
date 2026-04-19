@@ -255,8 +255,17 @@ export class ChatFlowManager {
       case ChatStep.NEGOTIATION_ASK:
         if (userInput?.initialOffer) {
           this.state.initialOffer = userInput.initialOffer
+          // Special case: if user asks for 1 month, accept immediately
+          if (userInput.initialOffer === 1) {
+            this.state.acceptedCounterOffer = true
+            this.state.counterOffer = 1
+            this.state.currentStep = ChatStep.CLOSING
+          } else {
+            this.state.currentStep = ChatStep.COUNTER_OFFER
+          }
+        } else {
+          this.state.currentStep = ChatStep.COUNTER_OFFER
         }
-        this.state.currentStep = ChatStep.COUNTER_OFFER
         break
 
       case ChatStep.COUNTER_OFFER:
@@ -269,7 +278,13 @@ export class ChatFlowManager {
           this.state.currentStep = ChatStep.CLOSING  // Accept → end
         } else if (userInput?.acceptCounterOffer === false) {
           this.state.acceptedCounterOffer = false
-          this.state.currentStep = ChatStep.SECOND_COUNTER_OFFER  // Reject → second offer
+          // Special case: if initial offer was 2 (counter was 1), end immediately after rejection
+          if (this.state.initialOffer === 2) {
+            this.state.acceptedSecondOffer = false
+            this.state.currentStep = ChatStep.CLOSING
+          } else {
+            this.state.currentStep = ChatStep.SECOND_COUNTER_OFFER  // Reject → second offer
+          }
         }
         break
 
